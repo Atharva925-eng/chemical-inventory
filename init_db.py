@@ -44,5 +44,32 @@ def create_equipment_table():
     except Error as e:
         print(f"Error: {e}")
 
+def create_bookings_table():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        
+        sql = """
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type ENUM('Lab', 'Instrument') NOT NULL,
+            resource_name VARCHAR(200) NOT NULL,
+            researcher_name VARCHAR(200) NOT NULL,
+            booking_date DATE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+        
+        print("Checking if 'bookings' table exists...")
+        cursor.execute(sql)
+        print("Success: 'bookings' table is now ready!")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Error as e:
+        print(f"Error: {e}")
+
 if __name__ == "__main__":
     create_equipment_table()
+    create_bookings_table()

@@ -58,3 +58,13 @@ CREATE TABLE IF NOT EXISTS equipments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
 );
+
+-- Table for resource bookings (Lab Rooms & Instruments)
+CREATE TABLE IF NOT EXISTS bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('Lab', 'Instrument') NOT NULL,
+    resource_name VARCHAR(200) NOT NULL,
+    researcher_name VARCHAR(200) NOT NULL,
+    booking_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -50,6 +50,10 @@ def form():
 def orders():
     return render_template('orders.html')
 
+@app.route('/resource-management')
+def resource_management():
+    return render_template('resource_management.html')
+
 # --- API ENDPOINTS (The "Bridge") ---
 
 # --- CHEMICALS API ---
@@ -249,6 +253,59 @@ def get_locations():
     cursor.close()
     conn.close()
     return jsonify(locations)
+
+# --- BOOKINGS API ---
+
+# 1. Get All Bookings
+@app.route('/api/bookings', methods=['GET'])
+def get_bookings():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM bookings ORDER BY booking_date DESC")
+    bookings = cursor.fetchall()
+    
+    # Format date for JSON
+    for b in bookings:
+        if b['booking_date']:
+            b['booking_date'] = b['booking_date'].isoformat()
+            
+    cursor.close()
+    conn.close()
+    return jsonify(bookings)
+
+# 2. Add New Booking
+@app.route('/api/bookings', methods=['POST'])
+def save_booking():
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        query = """
+            INSERT INTO bookings (type, resource_name, researcher_name, booking_date)
+            VALUES (%s, %s, %s, %s)
+        """
+        vals = (data['type'], data['resourceName'], data['researcherName'], data['date'])
+        cursor.execute(query, vals)
+        conn.commit()
+        return jsonify({'message': 'Success', 'id': cursor.lastrowid}), 201
+    except Exception as e:
+        print(f"ERROR SAVING BOOKING: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 3. Delete Booking
+@app.route('/api/bookings/<int:id>', methods=['DELETE'])
+def delete_booking_api(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM bookings WHERE id = %s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Deleted successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

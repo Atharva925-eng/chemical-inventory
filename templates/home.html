@@ -89,7 +89,7 @@
             </div>
         </div>
         <div class="row g-4 justify-content-center">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <a href="{{ url_for('chemicals') }}" class="card module-card card-chemical">
                     <div class="icon-box">
                         <i class="fa-solid fa-flask"></i>
@@ -98,13 +98,23 @@
                     <p class="module-desc">Manage lab chemicals, track stock levels, and safety data.</p>
                 </a>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <a href="{{ url_for('equipment') }}" class="card module-card card-equipment">
                     <div class="icon-box">
                         <i class="fa-solid fa-microscope"></i>
                     </div>
                     <div class="module-title">Equipment Management</div>
                     <p class="module-desc">Track laboratory equipment, maintenance schedules, and status.</p>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('resource_management') }}" class="card module-card"
+                    style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div class="module-title">Resource Management</div>
+                    <p class="module-desc">Schedule lab rooms and reserve shared instruments easily.</p>
                 </a>
             </div>
         </div>
