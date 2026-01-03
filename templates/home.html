@@ -83,7 +83,10 @@
 <body>
     <div class="container">
         <div class="row justify-content-center mb-5">
-            <div class="col-12 text-center">
+            <div class="col-12 text-center position-relative">
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger position-absolute top-0 end-0">
+                    <i class="fa-solid fa-sign-out-alt me-2"></i>Logout
+                </a>
                 <h1 class="fw-bold text-dark mb-2">Lab Management System</h1>
                 <p class="text-muted">Select a module to get started</p>
             </div>

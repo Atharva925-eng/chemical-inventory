@@ -121,14 +121,20 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary shadow-sm bg-white">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary shadow-sm bg-white">
                     <i class="fa-solid fa-house me-2"></i>Home
                 </a>
                 <a href="{{ url_for('orders') }}" class="btn btn-outline-dark shadow-sm bg-white">
                     <i class="fa-solid fa-file-invoice-dollar me-2"></i>Purchase Orders
                 </a>
+                <button id="scanHazardsBtn" class="btn btn-warning shadow-sm">
+                    <i class="fa-solid fa-shield-virus me-2"></i>AI Safety Scan
+                </button>
                 <a href="form.html" class="btn btn-primary shadow-sm">
                     <i class="fa-solid fa-plus me-2"></i>Add Chemical
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger shadow-sm">
+                    <i class="fa-solid fa-sign-out-alt"></i>
                 </a>
             </div>
         </header>
@@ -188,10 +194,14 @@
                                 placeholder="Search by name, CAS, or formula...">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 d-flex gap-2">
                         <select id="locationFilter" class="form-select">
                             <option value="">All Locations</option>
                         </select>
+                        <button class="btn btn-outline-primary" type="button" id="aiSearchToggle"
+                            data-bs-toggle="tooltip" title="Switch to AI Semantic Search">
+                            <i class="fa-solid fa-brain"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -348,6 +358,28 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Hazard Modal -->
+    <div class="modal fade" id="hazardModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title text-dark"><i class="fa-solid fa-triangle-exclamation me-2"></i>AI Safety
+                        Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="hazardModalBody">
+                    <div class="text-center py-4">
+                        <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Gemini AI is analyzing your inventory for dangerous combinations...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>

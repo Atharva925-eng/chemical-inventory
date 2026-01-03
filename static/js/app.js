@@ -189,9 +189,129 @@ const InventoryApp = {
             renderTable(filtered);
         };
 
-        searchInput.addEventListener('keyup', filterData);
+        searchInput.addEventListener('keyup', (e) => {
+            if (InventoryApp.aiMode) {
+                if (e.key === 'Enter') handleAiSearch();
+            } else {
+                filterData();
+            }
+        });
         locFilter.addEventListener('change', filterData);
         renderTable(chemicals);
+
+        // --- NEW: AI Search Logic ---
+        InventoryApp.aiMode = false;
+        const aiToggle = document.getElementById('aiSearchToggle');
+
+        const handleAiSearch = async () => {
+            const query = searchInput.value;
+            if (!query) return;
+
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Gemini is thinking...</td></tr>';
+
+            try {
+                const response = await fetch('/api/ai-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                // Filter chemicals by returned IDs
+                const matches = chemicals.filter(c => data.match_ids.includes(c.id));
+                renderTable(matches);
+
+                // Show explanation toast/alert
+                if (data.explanation) {
+                    // Simple inline feedback
+                    const alertRow = document.createElement('tr');
+                    alertRow.innerHTML = `<td colspan="6" class="bg-info bg-opacity-10 text-center text-info small fw-bold py-2">StartAI: "${data.explanation}"</td>`;
+                    tableBody.prepend(alertRow);
+                }
+
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">AI Error: ${err.message}</td></tr>`;
+            }
+        };
+
+        if (aiToggle) {
+            aiToggle.addEventListener('click', () => {
+                InventoryApp.aiMode = !InventoryApp.aiMode;
+                if (InventoryApp.aiMode) {
+                    aiToggle.classList.replace('btn-outline-primary', 'btn-primary');
+                    searchInput.placeholder = "✨ Ask Gemini (e.g. 'Show me flammable liquids')... Press Enter";
+                    locFilter.disabled = true;
+                } else {
+                    aiToggle.classList.replace('btn-primary', 'btn-outline-primary');
+                    searchInput.placeholder = "Search by name, CAS, or formula...";
+                    locFilter.disabled = false;
+                    renderTable(chemicals); // Reset
+                }
+            });
+        }
+
+        // --- NEW: AI Hazard Scan Logic ---
+        const scanBtn = document.getElementById('scanHazardsBtn');
+        if (scanBtn) {
+            scanBtn.addEventListener('click', async () => {
+                const modal = new bootstrap.Modal(document.getElementById('hazardModal'));
+                const modalBody = document.getElementById('hazardModalBody');
+
+                modal.show();
+                modalBody.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fa-solid fa-spinner fa-spin fa-2x text-warning"></i>
+                        <p class="mt-2 text-dark">Gemini AI is analyzing your inventory for dangerous combinations...</p>
+                    </div>
+                `;
+
+                try {
+                    const response = await fetch('/api/check-hazards');
+                    const data = await response.json();
+
+                    if (!response.ok) throw new Error(data.error || 'Scan failed');
+
+                    if (data.safe) {
+                        modalBody.innerHTML = `
+                            <div class="text-center py-4 text-success">
+                                <i class="fa-solid fa-check-circle fa-4x mb-3"></i>
+                                <h4>Inventory Safe!</h4>
+                                <p>${data.analysis || 'No incompatible combinations found in any shared storage location.'}</p>
+                            </div>
+                        `;
+                    } else {
+                        let html = '<div class="list-group">';
+                        data.hazards.forEach(h => {
+                            html += `
+                                <div class="list-group-item list-group-item-danger">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1"><i class="fa-solid fa-radiation me-2"></i>Incompatibility at <strong>${h.location}</strong></h5>
+                                        <small class="badge bg-danger text-uppercase">${h.severity || 'High Risk'}</small>
+                                    </div>
+                                    <p class="mb-1 fw-bold">${h.chemicals.join(' + ')}</p>
+                                    <small>${h.risk}</small>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        modalBody.innerHTML = html;
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    modalBody.innerHTML = `
+                        <div class="text-center py-4 text-danger">
+                            <i class="fa-solid fa-circle-exclamation fa-3x mb-3"></i>
+                            <p>Error: ${err.message}</p>
+                            ${err.message.includes('503') ? '<small>Please check your GEMINI_API_KEY environment variable.</small>' : ''}
+                        </div>
+                    `;
+                }
+            });
+        }
     },
 
     // --- UI HELPERS ---

@@ -17,13 +17,33 @@ A simplified web-based management system for tracking chemical inventory and lab
 ## 🛠️ Tech Stack
 - **Backend**: Python (Flask)
 - **Frontend**: HTML, CSS, JavaScript (Bootstrap 5)
-- **Database**: MySQL
+- **Database**: PostgreSQL
 
 ## ⚙️ Quick Start
 
-1. **Database**: Run `schema.sql` in your MySQL instance.
-2. **Dependencies**: `pip install flask mysql-connector-python`
-3. **Config**: Update `db_config` in `app.py` with your credentials.
-4. **Run**: `python app.py`
+### Prerequisites
+- Python 3.x
+- PostgreSQL installed and running (default user `postgres` or system user).
+
+### Setup
+
+1. **Environment**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install flask psycopg2-binary
+   ```
+
+2. **Database Setup**:
+   Run the setup script to create the database and tables (uses your system username by default on macOS):
+   ```bash
+   python setup_postgres.py
+   ```
+   *Note: If connection fails, check `setup_postgres.py` and `app.py` to match your local PostgreSQL credentials.*
+
+3. **Run Application**:
+   ```bash
+   python app.py
+   ```
 
 Access the system at `http://127.0.0.1:5000`.

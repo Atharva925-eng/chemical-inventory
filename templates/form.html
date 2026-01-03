@@ -27,7 +27,14 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Chemical Name *</label>
-                                    <input type="text" id="name" class="form-control" required>
+                                    <div class="input-group">
+                                        <input type="text" id="name" class="form-control" required
+                                            placeholder="e.g. Acetone">
+                                        <button class="btn btn-warning text-dark" type="button" id="aiFillBtn">
+                                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Fill
+                                        </button>
+                                    </div>
+                                    <small class="text-muted" id="aiFeedback" style="display:none;"></small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">CAS Number *</label>
@@ -80,11 +87,67 @@
         </div>
     </div>
 
+    <!-- FontAwesome required for sparkles icon if not already added in head/layout -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <script src="../static/js/app.js"></script>
     <script>
         // Initialize Form logic
         document.addEventListener('DOMContentLoaded', () => {
             InventoryApp.initForm();
+
+            // AI Smart Fill Logic
+            const aiBtn = document.getElementById('aiFillBtn');
+            const feedback = document.getElementById('aiFeedback');
+
+            aiBtn.addEventListener('click', async () => {
+                const query = document.getElementById('name').value;
+                if (!query) {
+                    alert('Please enter a chemical name first!');
+                    return;
+                }
+
+                aiBtn.disabled = true;
+                aiBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Thinking...';
+                feedback.style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/ai-lookup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: query })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) throw new Error(data.error);
+
+                    // Populate Fields
+                    if (data.cas_number) document.getElementById('cas_number').value = data.cas_number;
+                    if (data.safety_notes) document.getElementById('safety_notes').value = data.safety_notes;
+
+                    // Expiry Date Logic
+                    if (data.expiry_months) {
+                        const date = new Date();
+                        date.setMonth(date.getMonth() + data.expiry_months);
+                        document.getElementById('expiry_date').value = date.toISOString().split('T')[0];
+                    }
+
+                    feedback.style.display = 'block';
+                    feedback.className = 'text-success mt-1 d-block';
+                    feedback.innerHTML = `✨ Found info for: ${query}. Storage suggestion: <strong>${data.recommended_storage}</strong>`;
+
+                } catch (err) {
+                    // Check if 503 (Missing Key)
+                    console.error(err);
+                    feedback.style.display = 'block';
+                    feedback.className = 'text-danger mt-1 d-block';
+                    feedback.innerText = 'AI Error: ' + err.message;
+                } finally {
+                    aiBtn.disabled = false;
+                    aiBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Fill';
+                }
+            });
         });
     </script>
 </body>
