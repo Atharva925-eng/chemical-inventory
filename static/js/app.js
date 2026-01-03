@@ -36,9 +36,42 @@ const API = {
         return await response.json();
     },
 
-    // 5. Delete
+    // 5. Delete Base
     deleteChemical: async (id) => {
         await fetch(`/api/chemicals/${id}`, { method: 'DELETE' });
+    },
+
+    // --- ORDERS API ---
+    getOrders: async () => {
+        const response = await fetch('/api/orders');
+        return await response.json();
+    },
+    saveOrder: async (data) => {
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to save order');
+        }
+        return await response.json();
+    },
+    updateOrder: async (id, data) => {
+        const response = await fetch(`/api/orders/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to update order');
+        }
+        return await response.json();
+    },
+    deleteOrder: async (id) => {
+        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
     }
 };
 
@@ -443,5 +476,136 @@ const InventoryApp = {
                 window.location.href = '/';
             } catch (err) { alert(err.message); }
         });
+    },
+
+    // --- ORDERS LOGIC ---
+    initOrders: async () => {
+        const tableBody = document.getElementById('ordersTableBody');
+        if (!tableBody) return;
+
+        let ordersData = []; // Store locally for edit
+
+        // 1. Fetch Orders
+        try {
+            ordersData = await API.getOrders();
+            const orders = ordersData;
+
+            // 2. Stats Calculation
+            const openOrders = orders.filter(o => o.status !== 'Received' && o.status !== 'Cancelled');
+            const receivedValues = orders.filter(o => o.status === 'Received');
+            const pending = orders.filter(o => o.status === 'Pending');
+            const totalSpent = orders.reduce((sum, o) => sum + (parseFloat(o.total_cost) || 0), 0);
+
+            if (document.getElementById('statOpen')) document.getElementById('statOpen').innerText = openOrders.length;
+            if (document.getElementById('statReceived')) document.getElementById('statReceived').innerText = receivedValues.length;
+            if (document.getElementById('statPending')) document.getElementById('statPending').innerText = pending.length;
+            if (document.getElementById('statSpent')) document.getElementById('statSpent').innerText = `₹${totalSpent.toFixed(2)}`;
+
+            // 3. Render Table
+            tableBody.innerHTML = '';
+            if (orders.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No orders found.</td></tr>';
+            } else {
+                orders.forEach(order => {
+                    let badgeClass = 'bg-secondary';
+                    if (order.status === 'Received') badgeClass = 'bg-success';
+                    else if (order.status === 'Shipped') badgeClass = 'bg-primary';
+                    else if (order.status === 'Pending') badgeClass = 'bg-warning text-dark';
+                    else if (order.status === 'Cancelled') badgeClass = 'bg-danger';
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="ps-4 fw-bold">${order.po_number}</td>
+                        <td>${order.supplier}</td>
+                        <td>${order.order_date || 'N/A'}</td>
+                        <td>${order.items}</td>
+                        <td>₹${parseFloat(order.total_cost || 0).toFixed(2)}</td>
+                        <td><span class="badge ${badgeClass} bg-opacity-10 text-${badgeClass.replace('bg-', '')} status-badge">${order.status}</span></td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-light text-primary me-1" onclick="InventoryApp.openEditOrder(${order.id})"><i class="fa-regular fa-pen-to-square"></i></button>
+                            <button class="btn btn-sm btn-light text-danger" onclick="InventoryApp.deleteOrder(${order.id})"><i class="fa-regular fa-trash-can"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+        } catch (e) {
+            console.error(e);
+            tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading orders: ${e.message}</td></tr>`;
+        }
+
+        // 4. Handle Create/Edit Form
+        const createForm = document.getElementById('createOrderForm');
+        // Remove old listener to prevent duplicates (not perfect but simple)
+        const newForm = createForm.cloneNode(true);
+        if (createForm.parentNode) createForm.parentNode.replaceChild(newForm, createForm);
+
+        if (newForm) {
+            newForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('orderId').value;
+                const formData = {
+                    po_number: document.getElementById('po_number').value,
+                    supplier: document.getElementById('supplier').value,
+                    order_date: document.getElementById('order_date').value,
+                    items: document.getElementById('items').value,
+                    total_cost: parseFloat(document.getElementById('total_cost').value),
+                    status: document.getElementById('status').value
+                };
+
+                try {
+                    if (id) {
+                        await API.updateOrder(id, formData);
+                    } else {
+                        await API.saveOrder(formData);
+                    }
+                    // Close modal and refresh
+                    const modalEl = document.getElementById('newOrderModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                    InventoryApp.initOrders(); // Refresh
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        }
+
+        // Helper to find order data for edit
+        InventoryApp.openEditOrder = (id) => {
+            const order = ordersData.find(o => o.id === id);
+            if (!order) return;
+
+            document.getElementById('orderId').value = order.id;
+            document.getElementById('modalTitle').innerText = 'Edit Purchase Order';
+            document.getElementById('submitBtn').innerText = 'Update Order';
+
+            document.getElementById('po_number').value = order.po_number;
+            document.getElementById('supplier').value = order.supplier;
+            document.getElementById('order_date').value = order.order_date ? order.order_date.split('T')[0] : '';
+            document.getElementById('items').value = order.items;
+            document.getElementById('total_cost').value = order.total_cost;
+            document.getElementById('status').value = order.status;
+
+            new bootstrap.Modal(document.getElementById('newOrderModal')).show();
+        };
+
+        // Reset form on close
+        const modalEl = document.getElementById('newOrderModal');
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            document.getElementById('createOrderForm').reset();
+            document.getElementById('orderId').value = '';
+            document.getElementById('modalTitle').innerText = 'New Purchase Order';
+            document.getElementById('submitBtn').innerText = 'Create Order';
+        });
+    },
+
+    deleteOrder: async (id) => {
+        if (confirm('Delete this order record?')) {
+            try {
+                await API.deleteOrder(id);
+                InventoryApp.initOrders();
+            } catch (e) { alert(e.message); }
+        }
     }
 };

@@ -426,6 +426,127 @@ def delete_booking_api(id):
     conn.close()
     return jsonify({'message': 'Deleted successfully'})
 
+# --- PURCHASE ORDERS API ---
+
+# 1. Get All Orders
+@app.route('/api/orders', methods=['GET'])
+@login_required
+def get_orders():
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cursor.execute("SELECT * FROM purchase_orders ORDER BY order_date DESC")
+        orders = cursor.fetchall()
+        # Format date
+        for o in orders:
+            if o['order_date']:
+                o['order_date'] = o['order_date'].isoformat()
+        return jsonify(orders)
+    except Exception as e:
+        print(f"Error fetching orders: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 2. Create Order
+@app.route('/api/orders', methods=['POST'])
+@login_required
+def create_order():
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Basic validation
+        if not all(k in data for k in ('po_number', 'supplier', 'items')):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        query = """
+            INSERT INTO purchase_orders (po_number, supplier, order_date, items, total_cost, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """
+        vals = (
+            data['po_number'],
+            data['supplier'],
+            data.get('order_date') or None, # Default to today if None handled by DB? No, DB says NOT NULL. Frontend should send it.
+            data['items'],
+            data.get('total_cost', 0),
+            data.get('status', 'Pending')
+        )
+        cursor.execute(query, vals)
+        new_id = cursor.fetchone()[0]
+        conn.commit()
+        return jsonify({'message': 'Order created', 'id': new_id}), 201
+    except Exception as e:
+        print(f"Error creating order: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 3. Update Order
+@app.route('/api/orders/<int:id>', methods=['PUT'])
+@login_required
+def update_order(id):
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # We can update any field provided, but mostly Status is key
+        fields = []
+        vals = []
+        
+        if 'po_number' in data:
+            fields.append("po_number = %s")
+            vals.append(data['po_number'])
+        if 'supplier' in data:
+            fields.append("supplier = %s")
+            vals.append(data['supplier'])
+        if 'order_date' in data:
+            fields.append("order_date = %s")
+            vals.append(data['order_date'])
+        if 'items' in data:
+            fields.append("items = %s")
+            vals.append(data['items'])
+        if 'total_cost' in data:
+            fields.append("total_cost = %s")
+            vals.append(data['total_cost'])
+        if 'status' in data:
+            fields.append("status = %s")
+            vals.append(data['status'])
+            
+        if not fields:
+            return jsonify({'error': 'No fields to update'}), 400
+            
+        vals.append(id)
+        query = f"UPDATE purchase_orders SET {', '.join(fields)} WHERE id = %s"
+        cursor.execute(query, tuple(vals))
+        conn.commit()
+        return jsonify({'message': 'Order updated successfully'})
+    except Exception as e:
+        print(f"Update Error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 4. Delete Order
+@app.route('/api/orders/<int:id>', methods=['DELETE'])
+@login_required
+def delete_order(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM purchase_orders WHERE id = %s", (id,))
+        conn.commit()
+        return jsonify({'message': 'Deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 # --- AI LOOKUP API ---
 
 @app.route('/api/ai-lookup', methods=['POST'])
