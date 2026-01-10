@@ -1,8 +1,12 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
 import mysql.connector
 from mysql.connector import Error
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
+import os
 
 app = Flask(__name__)
+app.secret_key = 'super-secret-lab-key-123' # Static secret key for stable sessions
 
 # --- DATABASE CONFIGURATION ---
 # UPDATE 'password' with your real MySQL password!
@@ -23,34 +27,83 @@ def get_db_connection():
         print(f"Error connecting to MySQL: {e}")
         return None
 
+# --- AUTH DECORATOR ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- ROUTES: SERVE HTML PAGES ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        conn = get_db_connection()
+        if not conn:
+            flash('Database connection error', 'danger')
+            return render_template('login.html')
+            
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if user:
+            if check_password_hash(user['password_hash'], password):
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                session['full_name'] = user['full_name']
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid username or password. Please check your credentials and try again.', 'danger')
+        else:
+            flash(f'Invalid username or password. Please check your credentials and try again.', 'danger')
+            
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     return render_template('home.html')
 
 @app.route('/chemicals')
+@login_required
 def chemicals():
     return render_template('chemicals.html')
 
 @app.route('/equipment')
+@login_required
 def equipment():
     return render_template('equipment.html')
 
 @app.route('/equipment/form')
+@login_required
 def item_form():
     return render_template('equipment_form.html')
 
 @app.route('/form.html')
+@login_required
 def form():
-    # Keep for compatibility, but redir to /chemicals/add or similar if needed.
-    # For now, let's keep it but redirecting to chemicals dashboard page for simplicity or just serve it.
     return render_template('form.html')
 
 @app.route('/orders')
+@login_required
 def orders():
     return render_template('orders.html')
 
 @app.route('/resource-management')
+@login_required
 def resource_management():
     return render_template('resource_management.html')
 
@@ -306,6 +359,55 @@ def delete_booking_api(id):
     cursor.close()
     conn.close()
     return jsonify({'message': 'Deleted successfully'})
+
+# --- PURCHASE ORDERS API ---
+
+@app.route('/api/orders', methods=['GET'])
+@login_required
+def get_orders():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM purchase_orders ORDER BY order_date DESC")
+        orders = cursor.fetchall()
+        # Format dates for JSON
+        for o in orders:
+            if o['order_date']:
+                o['order_date'] = o['order_date'].strftime('%Y-%m-%d')
+        return jsonify(orders)
+    except Exception as e:
+        print(f"ERROR FETCHING ORDERS: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/orders', methods=['POST'])
+@login_required
+def save_order():
+    data = request.json
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    cursor = conn.cursor()
+    try:
+        query = """
+            INSERT INTO purchase_orders (po_number, supplier, order_date, items, total_cost, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        vals = (data['po_number'], data['supplier'], data['order_date'], 
+                data['items'], data['total_cost'], data['status'])
+        cursor.execute(query, vals)
+        conn.commit()
+        return jsonify({'message': 'Success', 'id': cursor.lastrowid}), 201
+    except Exception as e:
+        print(f"ERROR SAVING ORDER: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

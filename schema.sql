@@ -68,3 +68,12 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Table for users
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100),
+    role ENUM('admin', 'staff') DEFAULT 'staff',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

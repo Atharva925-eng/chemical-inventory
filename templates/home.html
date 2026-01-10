@@ -21,7 +21,20 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
             align-items: center;
+            padding: 2rem 0;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            padding: 0.8rem 0;
         }
 
         .module-card {
@@ -38,6 +51,8 @@
             color: white;
             text-decoration: none;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            /* Ensure internal text is centered */
         }
 
         .module-card:hover {
@@ -69,6 +84,8 @@
             font-size: 1.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            width: 100%;
+            /* Ensure text centering works across full width if needed */
         }
 
         .module-desc {
@@ -81,41 +98,72 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="row justify-content-center mb-5">
-            <div class="col-12 text-center">
-                <h1 class="fw-bold text-dark mb-2">Lab Management System</h1>
-                <p class="text-muted">Select a module to get started</p>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="#">
+                <i class="fas fa-microscope fs-3 me-2"></i>
+                <span class="fs-4">Lab Inventory</span>
+            </a>
+
+            <div class="ms-auto d-flex align-items-center">
+                <div class="me-4 text-end d-none d-sm-block">
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Logged in as</small>
+                    <span class="fw-bold text-dark">{{ session.get('username', 'User') }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger rounded-pill px-4 py-2 shadow-sm">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
             </div>
         </div>
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4">
-                <a href="{{ url_for('chemicals') }}" class="card module-card card-chemical">
-                    <div class="icon-box">
-                        <i class="fa-solid fa-flask"></i>
-                    </div>
-                    <div class="module-title">Chemical Inventory</div>
-                    <p class="module-desc">Manage lab chemicals, track stock levels, and safety data.</p>
-                </a>
+    </nav>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="row justify-content-center mb-5">
+                <div class="col-12 text-center">
+                    <h1 class="fw-bold text-dark mb-2">Lab Management System</h1>
+                    <p class="text-muted">Select a module to get started</p>
+                </div>
             </div>
-            <div class="col-md-4">
-                <a href="{{ url_for('equipment') }}" class="card module-card card-equipment">
-                    <div class="icon-box">
-                        <i class="fa-solid fa-microscope"></i>
-                    </div>
-                    <div class="module-title">Equipment Management</div>
-                    <p class="module-desc">Track laboratory equipment, maintenance schedules, and status.</p>
-                </a>
-            </div>
-            <div class="col-md-4">
-                <a href="{{ url_for('resource_management') }}" class="card module-card"
-                    style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-                    <div class="icon-box">
-                        <i class="fa-solid fa-calendar-check"></i>
-                    </div>
-                    <div class="module-title">Resource Management</div>
-                    <p class="module-desc">Schedule lab rooms and reserve shared instruments easily.</p>
-                </a>
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-3">
+                    <a href="{{ url_for('chemicals') }}" class="card module-card card-chemical">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-flask"></i>
+                        </div>
+                        <div class="module-title">Chemical Inventory</div>
+                        <p class="module-desc">Manage lab chemicals, track stock levels, and safety data.</p>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('equipment') }}" class="card module-card card-equipment">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-microscope"></i>
+                        </div>
+                        <div class="module-title">Equipment Management</div>
+                        <p class="module-desc">Track laboratory equipment, maintenance schedules, and status.</p>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('resource_management') }}" class="card module-card"
+                        style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <div class="module-title">Resource Management</div>
+                        <p class="module-desc">Schedule lab rooms and reserve shared instruments easily.</p>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('orders') }}" class="card module-card"
+                        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="icon-box">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="module-title">Maintenance & Stock</div>
+                        <p class="module-desc">Manage purchase orders, stock levels, and maintenance records.</p>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

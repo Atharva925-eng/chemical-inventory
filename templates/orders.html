@@ -4,10 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Orders | Lab Inventory</title>
+    <title>Maintenance & Stock | Lab Inventory</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
         body {
             background-color: #f0f2f5;
             font-family: 'Segoe UI', sans-serif;
@@ -24,6 +28,19 @@
             padding: 0.4em 0.8em;
             border-radius: 20px;
         }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #f5576c;
+            border-bottom: 3px solid #f5576c;
+            background: transparent;
+        }
     </style>
 </head>
 
@@ -36,105 +53,349 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1">
                         <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Orders</li>
+                        <li class="breadcrumb-item active">Maintenance & Stock</li>
                     </ol>
                 </nav>
-                <h2 class="fw-bold"><i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i>Purchase Orders
+                <h2 class="fw-bold"><i class="fa-solid fa-tools text-danger me-2"></i>Maintenance & Stock Management
                 </h2>
             </div>
-            <button class="btn btn-primary shadow-sm" onclick="alert('Create Order feature coming soon!')">
-                <i class="fa-solid fa-plus me-2"></i>New Order
-            </button>
-        </div>
-
-        <!-- Stats -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-3">
-                    <h6 class="text-muted text-uppercase small fw-bold">Open Orders</h6>
-                    <h2 class="mb-0 fw-bold text-primary">3</h2>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-3">
-                    <h6 class="text-muted text-uppercase small fw-bold">Received (Mo)</h6>
-                    <h2 class="mb-0 fw-bold text-success">12</h2>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-3">
-                    <h6 class="text-muted text-uppercase small fw-bold">Pending Approval</h6>
-                    <h2 class="mb-0 fw-bold text-warning">1</h2>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-3">
-                    <h6 class="text-muted text-uppercase small fw-bold">Total Spent (YTD)</h6>
-                    <h2 class="mb-0 fw-bold text-dark">₹0.000</h2>
-                </div>
+            <div>
+                <button class="btn btn-outline-primary shadow-sm me-2" onclick="location.reload()">
+                    <i class="fa-solid fa-sync me-2"></i>Refresh
+                </button>
             </div>
         </div>
 
-        <!-- Orders Table -->
-        <div class="card main-card overflow-hidden">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold">Recent Orders</h6>
-                <div class="input-group" style="width: 250px;">
-                    <span class="input-group-text bg-white border-end-0"><i
-                            class="fa-solid fa-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" placeholder="Search orders...">
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4 px-3 bg-white rounded shadow-sm border-0" id="managementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock"
+                    type="button" role="tab">Stock & Orders</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance"
+                    type="button" role="tab">Equipment Maintenance</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="managementTabsContent">
+            <!-- Stock & Orders Tab -->
+            <div class="tab-pane fade show active" id="stock" role="tabpanel">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Open Orders</h6>
+                            <h2 class="mb-0 fw-bold text-primary" id="open-orders-count">3</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Total Spent</h6>
+                            <h2 class="mb-0 fw-bold text-success">₹0.00</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Low Stock Items</h6>
+                            <h2 class="mb-0 fw-bold text-warning">5</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Pending Approval</h6>
+                            <h2 class="mb-0 fw-bold text-dark">1</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card main-card overflow-hidden">
+                    <div
+                        class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">Recent Purchase Orders</h6>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newOrderModal">
+                            <i class="fa-solid fa-plus me-1"></i>New Order
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">PO Number</th>
+                                    <th>Supplier</th>
+                                    <th>Date Ordered</th>
+                                    <th>Items</th>
+                                    <th>Total Cost</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <!-- Data will be loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">PO Number</th>
-                            <th>Supplier</th>
-                            <th>Date Ordered</th>
-                            <th>Items</th>
-                            <th>Total Cost</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Mock Row 1 -->
-                        <tr>
-                            <td class="ps-4 fw-bold">PO-2023-089</td>
-                            <td>Motewar Chemicals </td>
-                            <td>2023-11-15</td>
-                            <td>Acetone (5L), Ethanol (2L)</td>
-                            <td>₹00.00</td>
-                            <td><span class="badge bg-success bg-opacity-10 text-success status-badge">Received</span>
-                            </td>
-                        </tr>
-                        <!-- Mock Row 2 -->
-                        <tr>
-                            <td class="ps-4 fw-bold">PO-2023-090</td>
-                            <td>Bobade Acids </td>
-                            <td>2023-11-20</td>
-                            <td>Sulfuric Acid (500ml)</td>
-                            <td>₹00.00</td>
-                            <td><span class="badge bg-primary bg-opacity-10 text-primary status-badge">Shipped</span>
-                            </td>
-                        </tr>
-                        <!-- Mock Row 3 -->
-                        <tr>
-                            <td class="ps-4 fw-bold">PO-2023-091</td>
-                            <td>Renuka pharma</td>
-                            <td>2023-11-22</td>
-                            <td>Glassware Set</td>
-                            <td>₹00.00</td>
-                            <td><span class="badge bg-warning bg-opacity-10 text-warning status-badge">Pending</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <!-- Maintenance Tab -->
+            <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Upcoming</h6>
+                            <h2 class="mb-0 fw-bold text-primary" id="upcoming-maint-count">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Overdue</h6>
+                            <h2 class="mb-0 fw-bold text-danger" id="overdue-maint-count">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">In Maintenance</h6>
+                            <h2 class="mb-0 fw-bold text-warning" id="in-maint-count">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm text-center py-3">
+                            <h6 class="text-muted text-uppercase small fw-bold">Total Equipment</h6>
+                            <h2 class="mb-0 fw-bold text-dark" id="total-equip-count">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card main-card overflow-hidden">
+                    <div
+                        class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">Equipment Maintenance Schedule</h6>
+                        <div class="input-group" style="width: 250px;">
+                            <span class="input-group-text bg-white border-end-0"><i
+                                    class="fa-solid fa-search text-muted"></i></span>
+                            <input type="text" id="maint-search" class="form-control border-start-0"
+                                placeholder="Search equipment...">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Equipment</th>
+                                    <th>Manufacturer</th>
+                                    <th>Last Maintenance</th>
+                                    <th>Next Scheduled</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maintenance-table-body">
+                                <!-- Data will be loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+        <!-- New Order Modal -->
+        <div class="modal fade" id="newOrderModal" tabindex="-1" aria-labelledby="newOrderModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="newOrderModalLabel">Create New Purchase Order</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="newOrderForm">
+                            <div class="mb-3">
+                                <label for="po_number" class="form-label">PO Number</label>
+                                <input type="text" class="form-control" id="po_number" placeholder="e.g. PO-2024-001"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="supplier" class="form-label">Supplier</label>
+                                <input type="text" class="form-control" id="supplier" placeholder="Supplier Name"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="order_date" class="form-label">Order Date</label>
+                                <input type="date" class="form-control" id="order_date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="items" class="form-label">Items</label>
+                                <textarea class="form-control" id="items" rows="2"
+                                    placeholder="Item names, quantities..." required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="total_cost" class="form-label">Total Cost (₹)</label>
+                                <input type="number" step="0.01" class="form-control" id="total_cost" placeholder="0.00"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Shipped">Shipped</option>
+                                    <option value="Received">Received</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitOrder()">Create Order</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                loadOrders();
+                loadEquipment();
+            });
+
+            async function loadOrders() {
+                try {
+                    const response = await fetch('/api/orders');
+                    const orders = await response.json();
+
+                    const tbody = document.getElementById('orders-table-body');
+                    tbody.innerHTML = orders.map(o => `
+                    <tr>
+                        <td class="ps-4 fw-bold">${o.po_number}</td>
+                        <td>${o.supplier}</td>
+                        <td>${o.order_date}</td>
+                        <td>${o.items}</td>
+                        <td>₹${parseFloat(o.total_cost).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td><span class="badge ${getStatusClass(o.status)} status-badge">${o.status}</span></td>
+                    </tr>
+                `).join('');
+
+                    document.getElementById('open-orders-count').innerText = orders.filter(o => o.status !== 'Received').length;
+                } catch (err) {
+                    console.error("Error loading orders:", err);
+                }
+            }
+
+            async function submitOrder() {
+                const formData = {
+                    po_number: document.getElementById('po_number').value,
+                    supplier: document.getElementById('supplier').value,
+                    order_date: document.getElementById('order_date').value,
+                    items: document.getElementById('items').value,
+                    total_cost: document.getElementById('total_cost').value,
+                    status: document.getElementById('status').value
+                };
+
+                if (!formData.po_number || !formData.supplier || !formData.order_date || !formData.items || !formData.total_cost) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/orders', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (response.ok) {
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('newOrderModal'));
+                        modal.hide();
+
+                        // Reset form
+                        document.getElementById('newOrderForm').reset();
+
+                        // Reload data
+                        loadOrders();
+                        alert('Order created successfully!');
+                    } else {
+                        const error = await response.json();
+                        alert('Failed to create order: ' + (error.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    console.error("Error submitting order:", err);
+                    alert('An error occurred. Please try again.');
+                }
+            }
+
+            async function loadEquipment() {
+                try {
+                    const response = await fetch('/api/equipments');
+                    const equipments = await response.json();
+
+                    const tbody = document.getElementById('maintenance-table-body');
+                    const today = new Date();
+
+                    tbody.innerHTML = equipments.map(e => {
+                        const nextDate = e.next_maintenance_date ? new Date(e.next_maintenance_date) : null;
+                        const isOverdue = nextDate && nextDate < today && e.status !== 'Maintenance';
+
+                        return `
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">${e.name}</div>
+                                <small class="text-muted">${e.model_number || 'N/A'}</small>
+                            </td>
+                            <td>${e.manufacturer || 'N/A'}</td>
+                            <td>${e.last_maintenance_date || 'N/A'}</td>
+                            <td class="${isOverdue ? 'text-danger fw-bold' : ''}">${e.next_maintenance_date || 'Not Set'}</td>
+                            <td>
+                                <span class="badge ${getEquipStatusClass(e.status, isOverdue)} status-badge">
+                                    ${isOverdue ? 'OVERDUE' : e.status}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="alert('Update maintenance for ${e.name}')">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    }).join('');
+
+                    // Update stats
+                    document.getElementById('total-equip-count').innerText = equipments.length;
+                    document.getElementById('in-maint-count').innerText = equipments.filter(e => e.status === 'Maintenance').length;
+                    document.getElementById('upcoming-maint-count').innerText = equipments.filter(e => {
+                        if (!e.next_maintenance_date) return false;
+                        const next = new Date(e.next_maintenance_date);
+                        const diff = (next - today) / (1000 * 60 * 60 * 24);
+                        return diff >= 0 && diff <= 30;
+                    }).length;
+                    document.getElementById('overdue-maint-count').innerText = equipments.filter(e => {
+                        if (!e.next_maintenance_date) return false;
+                        return new Date(e.next_maintenance_date) < today && e.status !== 'Maintenance';
+                    }).length;
+
+                } catch (err) {
+                    console.error("Error loading equipment maintenance:", err);
+                }
+            }
+
+            function getStatusClass(status) {
+                switch (status) {
+                    case 'Received': return 'bg-success bg-opacity-10 text-success';
+                    case 'Shipped': return 'bg-primary bg-opacity-10 text-primary';
+                    case 'Pending': return 'bg-warning bg-opacity-10 text-warning';
+                    default: return 'bg-secondary bg-opacity-10 text-secondary';
+                }
+            }
+
+            function getEquipStatusClass(status, isOverdue) {
+                if (isOverdue) return 'bg-danger bg-opacity-10 text-danger';
+                switch (status) {
+                    case 'Working': return 'bg-success bg-opacity-10 text-success';
+                    case 'Maintenance': return 'bg-warning bg-opacity-10 text-warning';
+                    case 'Broken': return 'bg-danger bg-opacity-10 text-danger';
+                    default: return 'bg-secondary bg-opacity-10 text-secondary';
+                }
+            }
+        </script>
 </body>
 
 </html>
