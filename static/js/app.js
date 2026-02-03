@@ -39,8 +39,24 @@ const API = {
     // 5. Delete
     deleteChemical: async (id) => {
         await fetch(`/api/chemicals/${id}`, { method: 'DELETE' });
+    },
+
+    // 6. PubChem Suggest
+    suggestChemical: async (name) => {
+        const response = await fetch('/api/chemicals/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Suggestion failed');
+        }
+        return await response.json();
     }
 };
+
+
 
 /**
  * UI CONTROLLER
@@ -320,8 +336,56 @@ const InventoryApp = {
             try {
                 await API.saveChemical(formData);
                 alert('Saved!');
-                window.location.href = '/';
+                window.location.href = '/chemicals';
             } catch (err) { alert(err.message); }
         });
+    },
+
+    // --- AI SUGGESTION UI LOGIC ---
+    suggestChemicalInfo: async () => {
+        const nameInput = document.getElementById('name');
+        const spinner = document.getElementById('suggestSpinner');
+        const btn = document.getElementById('btnSuggest');
+
+        const chemicalName = nameInput.value.trim();
+        if (!chemicalName) {
+            alert('Please enter a chemical name first.');
+            return;
+        }
+
+        // UI Feedback
+        spinner.classList.remove('d-none');
+        btn.disabled = true;
+
+        try {
+            const data = await API.suggestChemical(chemicalName);
+
+            if (data) {
+                // Populate Fields
+                if (data.name) document.getElementById('name').value = data.name;
+                if (data.cas_number) document.getElementById('cas_number').value = data.cas_number;
+                if (data.safety_notes) document.getElementById('safety_notes').value = data.safety_notes;
+
+                // Suggest location if it matches existing locations
+                if (data.suggested_location) {
+                    const locSelect = document.getElementById('location_id');
+                    const locOptions = Array.from(locSelect.options);
+                    const match = locOptions.find(opt =>
+                        opt.text.toLowerCase().includes(data.suggested_location.toLowerCase()) ||
+                        data.suggested_location.toLowerCase().includes(opt.text.toLowerCase())
+                    );
+                    if (match) locSelect.value = match.value;
+                }
+
+                console.log("Suggestion applied:", data);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error getting suggestion: ' + err.message);
+        } finally {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+        }
     }
 };
+

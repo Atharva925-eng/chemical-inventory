@@ -4,6 +4,8 @@ from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
+import requests
+import os
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-lab-key-123' # Static secret key for stable sessions
@@ -16,6 +18,7 @@ db_config = {
     'password': 'Athu@123',  # <--- DID YOU CHANGE THIS?
     'database': 'lab_inventory_db'
 }
+
 
 
 def get_db_connection():
@@ -200,6 +203,72 @@ def delete_chemical(id):
     cursor.close()
     conn.close()
     return jsonify({'message': 'Deleted successfully'})
+
+# 5. Chemical Suggestion (PubChem API - No Key Required)
+@app.route('/api/chemicals/suggest', methods=['POST'])
+@login_required
+def suggest_chemical():
+    data = request.json
+    name = data.get('name')
+    if not name:
+        return jsonify({'error': 'Chemical name is required'}), 400
+
+    try:
+        # Search for CID (PubChem ID)
+        search_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/cids/JSON"
+        search_res = requests.get(search_url, timeout=5)
+        if search_res.status_code != 200:
+            return jsonify({'error': 'Chemical not found'}), 404
+        
+        cid = search_res.json()['IdentifierList']['CID'][0]
+
+        # Get Details (Formula, Name, CAS)
+        detail_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/JSON"
+        detail_res = requests.get(detail_url, timeout=5)
+        detail_data = detail_res.json()['PC_Compounds'][0]
+
+        res = {
+            'name': name.capitalize(),
+            'cas_number': '',
+            'formula': '',
+            'safety_notes': 'Information fetched from PubChem.',
+            'suggested_location': 'General Shelf'
+        }
+
+        # Extract Formula and Name
+        for prop in detail_data.get('props', []):
+            label = prop.get('urn', {}).get('label', '')
+            if label == 'Molecular Formula':
+                res['formula'] = prop.get('value', {}).get('sval', '')
+            if label == 'IUPAC Name' and prop.get('urn', {}).get('name', '') == 'Preferred':
+                res['name'] = prop.get('value', {}).get('sval', '')
+
+        # Get Synonyms for CAS
+        syn_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/synonyms/JSON"
+        syn_res = requests.get(syn_url, timeout=5)
+        if syn_res.status_code == 200:
+            synonyms = syn_res.json().get('InformationList', {}).get('Information', [{}])[0].get('Synonym', [])
+            import re
+            cas_regex = re.compile(r'^\d{2,7}-\d{2}-\d$')
+            for s in synonyms:
+                if cas_regex.match(s):
+                    res['cas_number'] = s
+                    break
+
+        # Suggest Location & Safety
+        if res['formula']:
+            res['safety_notes'] = f"[Formula: {res['formula']}] "
+        
+        low_name = res['name'].lower()
+        if any(x in low_name for x in ['acetone', 'ethanol', 'methanol', 'ether']):
+            res['suggested_location'] = 'Flammables Cabinet'
+            res['safety_notes'] += "Flammable. "
+        
+        return jsonify(res)
+
+    except Exception as e:
+        print(f"PUBCHEM ERROR: {e}")
+        return jsonify({'error': 'Failed to fetch data from PubChem'}), 500
 
 # --- EQUIPMENT API ---
 
