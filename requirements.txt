@@ -1,3 +1,6 @@
 Flask
 mysql-connector-python
 Werkzeug
+gspread
+google-auth
+gunicorn

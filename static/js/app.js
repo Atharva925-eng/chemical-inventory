@@ -289,17 +289,31 @@ const InventoryApp = {
         }
     },
 
-    // --- FORM LOGIC (Unchanged) ---
     initForm: async () => {
+        // --- FORM LOGIC (Unchanged) ---
         const locSelect = document.getElementById('location_id');
-        const locations = await API.getLocations();
+        console.log("Initializing Form: Fetching locations...");
 
-        locations.forEach(loc => {
-            const opt = document.createElement('option');
-            opt.value = loc.id;
-            opt.textContent = loc.name;
-            locSelect.appendChild(opt);
-        });
+        try {
+            const locations = await API.getLocations();
+            console.log("Locations fetched:", locations);
+
+            if (!locations || locations.length === 0) {
+                console.warn("No locations returned from API");
+            }
+
+            // Clear first
+            locSelect.innerHTML = '<option value="" disabled selected>Select Storage Location</option>';
+
+            locations.forEach(loc => {
+                const opt = document.createElement('option');
+                opt.value = loc.id;
+                opt.textContent = loc.name;
+                locSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.error("Error fetching locations in initForm:", e);
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         const editId = urlParams.get('id');

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Lab Management System</title>
+    <title>Register - Lab Management System</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
@@ -28,7 +28,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .login-card {
+        .register-card {
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -36,7 +36,7 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 450px;
-            padding: 3rem;
+            padding: 2.5rem;
             animation: slideUp 0.6s ease-out;
         }
 
@@ -53,42 +53,43 @@
         }
 
         .brand-logo {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             background: var(--primary-gradient);
-            border-radius: 20px;
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
+            margin: 0 auto 1rem;
             color: white;
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .login-title {
+        .register-title {
             font-weight: 800;
             color: #2d3436;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             text-align: center;
         }
 
-        .login-subtitle {
+        .register-subtitle {
             color: #636e72;
             text-align: center;
-            margin-bottom: 2.5rem;
-            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
         }
 
         .form-label {
             font-weight: 600;
             color: #2d3436;
             margin-left: 0.5rem;
+            font-size: 0.9rem;
         }
 
         .form-control {
             border-radius: 12px;
-            padding: 0.75rem 1rem;
+            padding: 0.6rem 1rem;
             border: 2px solid #e9ecef;
             transition: all 0.3s ease;
         }
@@ -98,7 +99,7 @@
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
 
-        .btn-login {
+        .btn-register {
             background: var(--primary-gradient);
             border: none;
             border-radius: 12px;
@@ -110,7 +111,7 @@
             color: white;
         }
 
-        .btn-login:hover {
+        .btn-register:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
             color: white;
@@ -119,17 +120,36 @@
         .alert {
             border-radius: 12px;
             font-weight: 500;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #636e72;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
-    <div class="login-card">
+    <div class="register-card">
         <div class="brand-logo">
-            <i class="fas fa-microscope"></i>
+            <i class="fas fa-user-plus"></i>
         </div>
-        <h2 class="login-title">Welcome Back</h2>
-        <p class="login-subtitle">Sign in to manage your lab inventory</p>
+        <h2 class="register-title">Create Account</h2>
+        <p class="register-subtitle">Join the lab management system</p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -142,7 +162,17 @@
         {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('login') }}" method="POST">
+        <form action="{{ url_for('register') }}" method="POST">
+            <div class="mb-3">
+                <label for="full_name" class="form-label">Full Name</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0" style="border-radius: 12px 0 0 12px;">
+                        <i class="fas fa-id-card text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0" id="full_name" name="full_name"
+                        placeholder="John Doe" required style="border-radius: 0 12px 12px 0;">
+                </div>
+            </div>
             <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
                 <div class="input-group">
@@ -150,7 +180,7 @@
                         <i class="fas fa-user text-muted"></i>
                     </span>
                     <input type="text" class="form-control border-start-0" id="username" name="username"
-                        placeholder="Enter username" required style="border-radius: 0 12px 12px 0;">
+                        placeholder="Choose a username" required style="border-radius: 0 12px 12px 0;">
                 </div>
             </div>
             <div class="mb-4">
@@ -163,12 +193,11 @@
                         placeholder="••••••••" required style="border-radius: 0 12px 12px 0;">
                 </div>
             </div>
-            <button type="submit" class="btn btn-login w-100">
-                L O G I N
+            <button type="submit" class="btn btn-register w-100">
+                S I G N U P
             </button>
-            <div class="text-center mt-3" style="font-size: 0.9rem; color: #636e72;">
-                Don't have an account? <a href="{{ url_for('register') }}"
-                    style="color: #667eea; text-decoration: none; font-weight: 700;">Sign Up</a>
+            <div class="login-link">
+                Already have an account? <a href="{{ url_for('login') }}">Login here</a>
             </div>
         </form>
     </div>
